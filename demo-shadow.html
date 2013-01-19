@@ -1,0 +1,179 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <script type='text/javascript' src='http://code.jquery.com/jquery-latest.min.js'></script>
+        <script type='text/javascript' src='js/stackblur.js'></script>   
+		<script type="text/javascript" src="js/kinect.js"></script>
+        <script type="text/javascript" src="js/shadowboxing.js"></script>
+        <style type="text/css">
+            #canvas{
+            }
+            #frame{
+                width: 700px;
+                margin: 0 auto;
+            }
+            #capture{
+                width: 700px;
+                margin: 0 auto;
+            }
+        </style>
+        <script type="text/javascript">
+
+            // array to store all rectangles
+            var rects = [];
+            // canvas drawing context
+            var game_ctx;
+            // canvas size
+            var w = 640;
+            var h = 480;
+            // the spped of movements, higher = faster
+            var speed = 24;
+            // the number of rectangles generated
+            var num_rects = 20;
+            // track the pixel length of the level
+            var total_block_length = 0;
+            // current level
+            var current_level = 1;
+            // 
+            var tick = false;
+            //
+            var game_over = false;
+            //
+            var game_welcome = true;
+            //
+            var game_over_bg;
+
+            var debug_image;
+
+
+            // get random team
+            function getRandomInt (min, max){
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            // main function, not called , see shadowbox.js for direct injection
+            function animate(){
+                var canvas = document.getElementById('canvas');
+                if (canvas.getContext) {
+                    game_ctx = canvas.getContext("2d");
+                    setInterval(draw,20);
+                    setInterval(boolean_tick,300);
+                }
+            }
+
+            // provide a boolean switch of fixed time interval
+            function boolean_tick(){
+                tick = !tick;
+            }
+
+            // initiate all rectangles
+            function init_rect(){
+                var lm = 0;
+                for(var i=0;i<num_rects;i++){
+                    var rect_width = getRandomInt(30,50); 
+                    rects.push(new rect(rect_width,100,lm,getRandomInt(h-20,h-5)));
+                    var gap = getRandomInt(400,600);
+                    lm -= gap;
+                    total_block_length += (rect_width+gap);
+                }
+            }
+
+            // rectangle object prototype
+            function rect(width, height,x,y){
+                this.width = width;
+                this.height = height;
+                this.x = x;
+                this.y = y;
+            }
+
+            // draw all elements
+            function draw() {
+                game_ctx.clearRect(0,0,w,h);  
+                game_ctx.lineWidth=1;
+                game_ctx.lineStyle="#ffff00";
+                game_ctx.fillStyle = "rgb(0,0,0)";
+                game_ctx.font="20px sans-serif";
+                game_ctx.fillText("Level "+current_level, 10, 30);
+                if(game_welcome){
+                    game_ctx.fillText("Stand in the blue area to start the game.", 10, h/2);
+                    game_ctx.fillStyle = "rgb(0,0,255)";
+                    game_ctx.fillRect(w-100, h-10, 100, 15);
+                    if(verify_collision(w-100,h-10) || verify_collision(w,h-10)){
+                        game_welcome = false;
+                        game_over = false;
+                        current_level = 1;
+                        rects = [];
+                        init_rect();
+                    }
+                }else if(game_over){
+                    game_ctx.putImageData(game_over_bg, 0, 0);
+                    game_ctx.fillStyle = "rgb(255,255,255)";
+                    game_ctx.fillRect(0, h/2-18, w, 20);
+                    game_ctx.fillStyle = "rgb(0,0,0)";
+                    game_ctx.fillText("Game over : ( Touch the upper right block to restart.", 10, h/2);
+                    game_ctx.font="16px sans-serif";
+                    if(tick){
+                        game_ctx.fillText("Touch me to restart", w-150, 30);
+                    }
+                    game_ctx.fillRect(w-100, 40, 60, 15);
+                    if(verify_collision(w-100,55) || verify_collision(w-40,55)){
+                        game_over = false;
+                        current_level = 1;
+                        rects = [];
+                        init_rect();
+                    }
+                }else{
+                    if(rects[0].x > -20 && rects[0].x < w/2 && tick){
+                        game_ctx.font="22px sans-serif";
+                        game_ctx.fillText("Incoming blocks! Avoid them!", 10, h/2);
+                    }
+                    //debug_image = getShadowData();
+                    //game_ctx.putImageData(debug_image, 0, 0);
+
+                    game_ctx.font="13px sans-serif";
+                    for(var i=0; i< rects.length; i++){
+                        var block = rects[i];
+                        game_ctx.fillText(""+i, block.x, block.y-10);
+                        block.x = block.x + speed;
+                        if(block.x > w + 100){
+                            if(i == rects.length - 1){
+                                // next level
+                                current_level += 1;
+                            }
+                            block.x = block.x - total_block_length;
+                            block.y = getRandomInt(h-20,h-5);
+                        }
+                        if(verify_collision(block.x,block.y) || verify_collision(block.x+block.width,block.y)){
+                            console.log("collision happened on box" + i);
+                            game_over_bg = getShadowData();
+                            game_over = true;
+                        }
+                        game_ctx.fillRect(block.x, block.y, block.width, block.height);
+                    }
+                }
+            }
+
+            // verify if a point is overlapped with shadow, use shadowContext
+            function verify_collision(b_x,b_y){
+                if(shadowContext.getImageData(b_x,b_y,1,1).data[3] > 200){
+                    return true;
+                }else{
+                    return false;
+                }
+            }
+            
+        </script>
+    </head>
+
+    <body onload="animate()">
+        <div id="capture">
+            <button id="background">Capture Background</button>        
+        </div>    
+
+        <div id="frame">
+            <canvas id="canvas" width="640px" height="480px">
+            </canvas>
+        </div>
+
+    </body>
+</html>
