@@ -13,7 +13,7 @@ $(document).ready(function() {
 
 /*
  * In this example, we show you how to overlay the shadow information over
- * an image painted into the canvas. This function is called in a loop
+ * an images painted into the canvas. This function is called in a loop
  * by shadowboxing.js. It overrides the default behavior of renderShadow(),
  * which draws the shadow in black on a white canvas.
  */
@@ -28,9 +28,10 @@ function renderShadow() {
     // shadow pixels are black ([0 0 0 0]).
     shadow = getShadowData();
 
-    // Drawing from our image onto the canvas
+
+    // Drawing from our images onto the canvas
     if (imageReady) {
-        // draw the image over the entire canvas
+        // draw the images over the entire canvas
         shadowContext.drawImage(stanfordImage, 0, 0, shadowCanvas.width, shadowCanvas.height);    
         var pixels = shadowContext.getImageData(0, 0, shadowCanvas.width, shadowCanvas.height);
 

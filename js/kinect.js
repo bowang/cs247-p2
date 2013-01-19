@@ -1848,9 +1848,9 @@
 	/*********************************
 	* snapshot( FUNCTION, FUNCTION ) chainable added on vI
 	*---------------------------------
-	* Returns base64 encoded image can save it to localStorage
+	* Returns base64 encoded images can save it to localStorage
 	* with date / timestamp if required
-	* - callback : Function - what to do with the image data (base64 jpg)
+	* - callback : Function - what to do with the images data (base64 jpg)
 	* - errorcallback : Function - called on error
 	**********************************/
 	kinect.snapshot = function( callback, errorcallback ) {
@@ -1864,8 +1864,7 @@
 
 			_callback = callback;
 			_xmlhttp.onload = _readyStateChange;
-
-			_xmlhttp.setAttribute( 'src', "http://" + kinect.address + "/?u=image#" + new Date().getTime() );
+			_xmlhttp.setAttribute( 'src', "http://" + kinect.address + "/?u=images#" + new Date().getTime() );
 			_headContainer.appendChild( _xmlhttp );
 		}
 
@@ -1876,7 +1875,7 @@
 		snapshot			:	kinect.snapshot,
 		currentImageData	:	null,
 		/*********************************
-		* Saves image to localStorage if specified
+		* Saves images to localStorage if specified
 		* example : kinect.snapshot(...).saveToLocalStorage();
 		**********************************/
 		saveToLocalStorage	: function() {

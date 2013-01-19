@@ -20,6 +20,7 @@ SHOW_SHADOW = true;
 var INPUT = "webcam"; 
 // A difference of >= SHADOW_THRESHOLD across RGB space from the background
 // frame is marked as foreground
+
 var SHADOW_THRESHOLD = 125; 
 // Between 0 and 1: how much memory we retain of previous frames.
 // In other words, how much we let the background adapt over time to more recent frames
@@ -77,7 +78,6 @@ function initializeDOMElements() {
     video.setAttribute('autoplay', true);
     video.style.display = 'none';
 
-    
     rawCanvas = document.createElement('canvas');
     rawCanvas.setAttribute('id', 'rawCanvas');
     rawCanvas.setAttribute('width', 640);
@@ -95,6 +95,7 @@ function initializeDOMElements() {
 
     // zooming 
     rawContext.scale(EVADER_ZOOM_LEVEL, EVADER_ZOOM_LEVEL) 
+
     
     shadowCanvas = document.createElement('canvas');
     shadowCanvas.setAttribute('id', 'shadowCanvas');
@@ -154,7 +155,7 @@ function startKinect() {
 	};
 
 	kinectSocket.onmessage = function( e ) {
-		if (e.data.indexOf("data:image/jpeg") == 0) {
+		if (e.data.indexOf("data:images/jpeg") == 0) {
 			var image = new Image();
 			image.src = e.data;
 			image.onload = function() {
@@ -229,11 +230,6 @@ function renderShadow() {
   
   pixelData = getShadowData();
   shadowContext.putImageData(pixelData, 0, 0);
-
-  // code injection
-  // draw();
-  
-
   setTimeout(renderShadow, 0);
 }
 
