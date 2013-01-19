@@ -18,6 +18,9 @@
             }
         </style>
         <script type="text/javascript">
+            // for console debugging purpose
+            var force_fail = false;
+            // for console debugging purpose
             var force_start = false;
             // array to store all rectangles
             var rects = [];
@@ -34,6 +37,8 @@
             var total_block_length = 0;
             // current level
             var current_level = 1;
+            // current score
+            var current_score = 0;
             //  a boolen function changing every once a while
             var tick = false;
             var game_over = false;
@@ -45,14 +50,6 @@
             // special images
             var special_items = [];
 
-            function init_items(){
-                for(var i=1; i<7; i++){
-                    var img = new Image;
-                    img.src = "images/l"+i+".png";
-                    special_items.push(new item(img,30,30));
-                    //game_ctx.drawImage(img,0,0,30,30);
-                }
-            }
 
             // get random integer
             function get_rnd_pos(min, max,in_air){
@@ -119,6 +116,11 @@
                 game_ctx.fillStyle = "rgb(0,0,0)";
                 game_ctx.font="20px sans-serif";
                 game_ctx.fillText("Level "+current_level, 10, 30);
+                game_ctx.fillText("Score "+current_score, 90, 30);
+
+                var top_score = getCookie("evader_top_score");
+                game_ctx.fillText("Top score "+top_score, 180, 30);
+                            
                 if(game_welcome){
                     game_ctx.fillText("Stand in the blue area to start the game.", 10, h/2);
                     game_ctx.fillStyle = "rgb(0,0,255)";
@@ -127,11 +129,14 @@
                         game_welcome = false;
                         game_over = false;
                         current_level = 1;
+                        current_score = 0;
                         rects = [];
                         init_rect();
                     }
                 }else if(game_over){
-                    game_ctx.putImageData(game_over_bg, 0, 0);
+                    if(!force_fail){
+                        game_ctx.putImageData(game_over_bg, 0, 0);
+                    }
                     game_ctx.fillStyle = "rgb(255,255,255)";
                     game_ctx.fillRect(0, h/2-18, w, 20);
                     game_ctx.fillStyle = "rgb(0,0,0)";
@@ -144,6 +149,7 @@
                     if(verify_collision(w-100,55) || verify_collision(w-40,55)){
                         game_over = false;
                         current_level = 1;
+                        current_score = 0;
                         rects = [];
                         init_rect();
                     }
@@ -161,6 +167,7 @@
                         game_ctx.fillText(""+i, block.x, block.y-10);
                         block.x = block.x + speed;
                         if(block.x > w + 100){
+                            current_score += 1;
                             if(i == rects.length - 1){
                                 // next level
                                 current_level += 1;
@@ -170,9 +177,17 @@
                                 block.y = get_rnd_pos(h-20,h-5,true);
                             }
                         }
-                        if(verify_collision(block.x,block.y) || verify_collision(block.x+block.width,block.y)){
-                            console.log("collision happened on box" + i);
-                            game_over_bg = getShadowData();
+                        if(verify_collision(block.x,block.y) || verify_collision(block.x+block.width,block.y) || force_fail){
+                            console.log("collision happened on box " + i);
+                            var top_score = getCookie("evader_top_score");
+                            console.log("Previous top score "+top_score);
+                            if(current_score > top_score){
+                                setCookie("evader_top_score",current_score,5);
+                                console.log("New top score "+current_score);
+                            }
+                            if(!force_fail){
+                                game_over_bg = getShadowData();
+                            }
                             game_over = true;
                         }
                         if(block.img_src == ""){
@@ -191,6 +206,26 @@
                 }else{
                     return false;
                 }
+            }
+
+            // cookie setting and getting helpers
+            function getCookie(c_name){
+                var i,x,y,ARRcookies=document.cookie.split(";");
+                for (i=0;i<ARRcookies.length;i++){
+                    x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
+                    y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
+                    x=x.replace(/^\s+|\s+$/g,"");
+                    if (x==c_name){
+                        return unescape(y);
+                    }
+                }
+                return 0;
+            }
+            function setCookie(c_name,value,exdays){
+                var exdate=new Date();
+                exdate.setDate(exdate.getDate() + exdays);
+                var c_value=escape(value) + ((exdays==null) ? "" : "; expires="+exdate.toUTCString());
+                document.cookie=c_name + "=" + c_value;
             }
             
         </script>
