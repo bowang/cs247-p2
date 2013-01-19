@@ -18,7 +18,7 @@
             }
         </style>
         <script type="text/javascript">
-
+            var force_start = false;
             // array to store all rectangles
             var rects = [];
             // canvas drawing context
@@ -27,28 +27,45 @@
             var w = 640;
             var h = 480;
             // the spped of movements, higher = faster
-            var speed = 24;
+            var speed = 9;
             // the number of rectangles generated
             var num_rects = 20;
             // track the pixel length of the level
             var total_block_length = 0;
             // current level
             var current_level = 1;
-            // 
+            //  a boolen function changing every once a while
             var tick = false;
-            //
             var game_over = false;
-            //
             var game_welcome = true;
-            //
+            //the background of the user when game is over
             var game_over_bg;
-
+            // image for live debugging
             var debug_image;
+            // special images
+            var special_items = [];
 
+            function init_items(){
+                for(var i=1; i<7; i++){
+                    var img = new Image;
+                    img.src = "images/l"+i+".png";
+                    special_items.push(new item(img,30,30));
+                    //game_ctx.drawImage(img,0,0,30,30);
+                }
+            }
 
-            // get random team
-            function getRandomInt (min, max){
-                return Math.floor(Math.random() * (max - min + 1)) + min;
+            // get random integer
+            function get_rnd_pos(min, max,in_air){
+                var dice = Math.random();
+                if(dice>0.7 && in_air){
+                     // in middle air
+                    return Math.floor(Math.random() * (max - min + 1)) + min - 300;
+                    
+                }else{
+                   // on the ground
+                    return Math.floor(Math.random() * (max - min + 1)) + min;
+                }
+                
             }
 
             // main function, not called , see shadowbox.js for direct injection
@@ -70,16 +87,24 @@
             function init_rect(){
                 var lm = 0;
                 for(var i=0;i<num_rects;i++){
-                    var rect_width = getRandomInt(30,50); 
-                    rects.push(new rect(rect_width,100,lm,getRandomInt(h-20,h-5)));
-                    var gap = getRandomInt(400,600);
+                    var rect_width = get_rnd_pos(30,50,false);
+                    var rect_height = get_rnd_pos(20,40,false);
+                    if(i % 4 == 0){
+                        var img = new Image;
+                        img.src = "images/l"+((i/4)+1)+".png";
+                        rects.push(new rect(img,60,40,lm,h-40));
+                    }else{
+                        rects.push(new rect("",rect_width,rect_height,lm,get_rnd_pos(h-20,h-5,true)));
+                    }
+                    var gap = get_rnd_pos(400,600,false);
                     lm -= gap;
                     total_block_length += (rect_width+gap);
                 }
             }
 
             // rectangle object prototype
-            function rect(width, height,x,y){
+            function rect(img_src, width, height,x,y){
+                this.img_src = img_src;
                 this.width = width;
                 this.height = height;
                 this.x = x;
@@ -98,7 +123,7 @@
                     game_ctx.fillText("Stand in the blue area to start the game.", 10, h/2);
                     game_ctx.fillStyle = "rgb(0,0,255)";
                     game_ctx.fillRect(w-100, h-10, 100, 15);
-                    if(verify_collision(w-100,h-10) || verify_collision(w,h-10)){
+                    if(verify_collision(w-100,h-10) || verify_collision(w,h-10) || force_start){
                         game_welcome = false;
                         game_over = false;
                         current_level = 1;
@@ -141,14 +166,20 @@
                                 current_level += 1;
                             }
                             block.x = block.x - total_block_length;
-                            block.y = getRandomInt(h-20,h-5);
+                            if(block.img_src == ""){
+                                block.y = get_rnd_pos(h-20,h-5,true);
+                            }
                         }
                         if(verify_collision(block.x,block.y) || verify_collision(block.x+block.width,block.y)){
                             console.log("collision happened on box" + i);
                             game_over_bg = getShadowData();
                             game_over = true;
                         }
-                        game_ctx.fillRect(block.x, block.y, block.width, block.height);
+                        if(block.img_src == ""){
+                            game_ctx.fillRect(block.x, block.y, block.width, block.height);
+                        }else{
+                            game_ctx.drawImage(block.img_src,block.x, block.y, block.width, block.height);
+                        }
                     }
                 }
             }
