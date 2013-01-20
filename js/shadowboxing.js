@@ -14,7 +14,7 @@
 // show the after-gaussian blur camera input
 SHOW_RAW = false;
 // show the final shadow
-SHOW_SHADOW = true;
+SHOW_SHADOW = false;
 // input option: kinectdepth (kinect depth sensor), kinectrgb (kinect camera), 
 // or webcam (computer camera)
 var INPUT = "webcam"; 

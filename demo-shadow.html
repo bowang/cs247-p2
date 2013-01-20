@@ -18,7 +18,10 @@
             }
         </style>
         <script type="text/javascript">
-
+            // for console debugging purpose
+            var force_fail = false;
+            // for console debugging purpose
+            var force_start = false;
             // array to store all rectangles
             var rects = [];
             // canvas drawing context
@@ -27,28 +30,39 @@
             var w = 640;
             var h = 480;
             // the spped of movements, higher = faster
-            var speed = 24;
+            var speed = 9;
             // the number of rectangles generated
             var num_rects = 20;
             // track the pixel length of the level
             var total_block_length = 0;
             // current level
             var current_level = 1;
-            // 
+            // current score
+            var current_score = 0;
+            //  a boolen function changing every once a while
             var tick = false;
-            //
             var game_over = false;
-            //
             var game_welcome = true;
-            //
+            //the background of the user when game is over
             var game_over_bg;
-
+            // image for live debugging
             var debug_image;
+            // special images
+            var special_items = [];
 
 
-            // get random team
-            function getRandomInt (min, max){
-                return Math.floor(Math.random() * (max - min + 1)) + min;
+            // get random integer
+            function get_rnd_pos(min, max,in_air){
+                var dice = Math.random();
+                if(dice>0.7 && in_air){
+                     // in middle air
+                    return Math.floor(Math.random() * (max - min + 1)) + min - 300;
+                    
+                }else{
+                   // on the ground
+                    return Math.floor(Math.random() * (max - min + 1)) + min;
+                }
+                
             }
 
             // main function, not called , see shadowbox.js for direct injection
@@ -70,16 +84,24 @@
             function init_rect(){
                 var lm = 0;
                 for(var i=0;i<num_rects;i++){
-                    var rect_width = getRandomInt(30,50); 
-                    rects.push(new rect(rect_width,100,lm,getRandomInt(h-20,h-5)));
-                    var gap = getRandomInt(400,600);
+                    var rect_width = get_rnd_pos(30,50,false);
+                    var rect_height = get_rnd_pos(20,40,false);
+                    if(i % 4 == 0){
+                        var img = new Image;
+                        img.src = "images/l"+((i/4)+1)+".png";
+                        rects.push(new rect(img,60,40,lm,h-40));
+                    }else{
+                        rects.push(new rect("",rect_width,rect_height,lm,get_rnd_pos(h-20,h-5,true)));
+                    }
+                    var gap = get_rnd_pos(400,600,false);
                     lm -= gap;
                     total_block_length += (rect_width+gap);
                 }
             }
 
             // rectangle object prototype
-            function rect(width, height,x,y){
+            function rect(img_src, width, height,x,y){
+                this.img_src = img_src;
                 this.width = width;
                 this.height = height;
                 this.x = x;
@@ -94,19 +116,27 @@
                 game_ctx.fillStyle = "rgb(0,0,0)";
                 game_ctx.font="20px sans-serif";
                 game_ctx.fillText("Level "+current_level, 10, 30);
+                game_ctx.fillText("Score "+current_score, 90, 30);
+
+                var top_score = getCookie("evader_top_score");
+                game_ctx.fillText("Top score "+top_score, 180, 30);
+                            
                 if(game_welcome){
                     game_ctx.fillText("Stand in the blue area to start the game.", 10, h/2);
                     game_ctx.fillStyle = "rgb(0,0,255)";
                     game_ctx.fillRect(w-100, h-10, 100, 15);
-                    if(verify_collision(w-100,h-10) || verify_collision(w,h-10)){
+                    if(verify_collision(w-100,h-10) || verify_collision(w,h-10) || force_start){
                         game_welcome = false;
                         game_over = false;
                         current_level = 1;
+                        current_score = 0;
                         rects = [];
                         init_rect();
                     }
                 }else if(game_over){
-                    game_ctx.putImageData(game_over_bg, 0, 0);
+                    if(!force_fail){
+                        game_ctx.putImageData(game_over_bg, 0, 0);
+                    }
                     game_ctx.fillStyle = "rgb(255,255,255)";
                     game_ctx.fillRect(0, h/2-18, w, 20);
                     game_ctx.fillStyle = "rgb(0,0,0)";
@@ -119,6 +149,7 @@
                     if(verify_collision(w-100,55) || verify_collision(w-40,55)){
                         game_over = false;
                         current_level = 1;
+                        current_score = 0;
                         rects = [];
                         init_rect();
                     }
@@ -136,19 +167,34 @@
                         game_ctx.fillText(""+i, block.x, block.y-10);
                         block.x = block.x + speed;
                         if(block.x > w + 100){
+                            current_score += 1;
                             if(i == rects.length - 1){
                                 // next level
                                 current_level += 1;
                             }
                             block.x = block.x - total_block_length;
-                            block.y = getRandomInt(h-20,h-5);
+                            if(block.img_src == ""){
+                                block.y = get_rnd_pos(h-20,h-5,true);
+                            }
                         }
-                        if(verify_collision(block.x,block.y) || verify_collision(block.x+block.width,block.y)){
-                            console.log("collision happened on box" + i);
-                            game_over_bg = getShadowData();
+                        if(verify_collision(block.x,block.y) || verify_collision(block.x+block.width,block.y) || force_fail){
+                            console.log("collision happened on box " + i);
+                            var top_score = getCookie("evader_top_score");
+                            console.log("Previous top score "+top_score);
+                            if(current_score > top_score){
+                                setCookie("evader_top_score",current_score,5);
+                                console.log("New top score "+current_score);
+                            }
+                            if(!force_fail){
+                                game_over_bg = getShadowData();
+                            }
                             game_over = true;
                         }
-                        game_ctx.fillRect(block.x, block.y, block.width, block.height);
+                        if(block.img_src == ""){
+                            game_ctx.fillRect(block.x, block.y, block.width, block.height);
+                        }else{
+                            game_ctx.drawImage(block.img_src,block.x, block.y, block.width, block.height);
+                        }
                     }
                 }
             }
@@ -160,6 +206,26 @@
                 }else{
                     return false;
                 }
+            }
+
+            // cookie setting and getting helpers
+            function getCookie(c_name){
+                var i,x,y,ARRcookies=document.cookie.split(";");
+                for (i=0;i<ARRcookies.length;i++){
+                    x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
+                    y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
+                    x=x.replace(/^\s+|\s+$/g,"");
+                    if (x==c_name){
+                        return unescape(y);
+                    }
+                }
+                return 0;
+            }
+            function setCookie(c_name,value,exdays){
+                var exdate=new Date();
+                exdate.setDate(exdate.getDate() + exdays);
+                var c_value=escape(value) + ((exdays==null) ? "" : "; expires="+exdate.toUTCString());
+                document.cookie=c_name + "=" + c_value;
             }
             
         </script>
