@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script type='text/javascript' src='js/jquery-latest.min.js'></script>
+    <script type="text/javascript" src="js/sylvester.src.js"></script>
+    <title></title>
+    <script type="text/javascript">
+        function reflect() {
+            console.log("calculate reflection");
+            var nx = parseFloat($("#ni").val());
+            var ny = parseFloat($("#nj").val());
+            var n = $V([nx, ny]).toUnitVector();
+            var vx = parseFloat($("#vi").val());
+            var vy = parseFloat($("#vj").val());
+            var v = $V([vx, vy]);
+            var u = n.multiply(v.dot(n)*(-2)).add(v);
+            $("#ui").text("" + u.e(1));
+            $("#uj").text("" + u.e(2));
+        }
+        $(document).ready(function() {
+            $("#ni").blur(reflect);
+            $("#nj").blur(reflect);
+            $("#vi").blur(reflect);
+            $("#vj").blur(reflect);
+            reflect();
+        });
+    </script>
+</head>
+<body>
+    n (i, j) = (<input type="text" id="ni" value="0"> , <input type="text" id="nj" value="1">)<br>
+    v (i, j) = (<input type="text" id="vi" value="2"> , <input type="text" id="vj" value="-2">)<br>
+    u (i, j) = (<span id="ui"></span>, <span id="uj"></span>)<br>
+</body>
+</html>
