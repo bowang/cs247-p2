@@ -280,12 +280,13 @@
                 }
             }
 
+            // reflect the ball velocity based on n(x,y)
             function reflect(ball, nx, ny) {
-                n = $V([nx, ny]).toUnitVector();
-                v = $V([ball.vx, ball.vy]);
-                v_new = n.multiply(v.dot(n)*(-2)).add(v);
-                ball.vx = v_new.i;
-                ball.vy = v_new.j;
+                var n = $V([nx, ny]).toUnitVector();
+                var v = $V([ball.vx, ball.vy]);
+                var u = n.multiply(v.dot(n)*(-2)).add(v);
+                ball.vx = u.e(1);
+                ball.vy = u.e(2);
             }
 
             // cookie setting and getting helpers
