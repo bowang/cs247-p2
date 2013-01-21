@@ -32,8 +32,12 @@
             // canvas size
             var w = 640;
             var h = 480;
-            // the spped of movements, higher = faster
-            var speed = 0;
+            // the speed of movements, higher = faster
+            var rect_speed = 0;
+            // the speed of the ball
+            var ball_speed = 3;
+            // the radious of the ball
+            var ball_radious = 20;
             // the number of rectangles generated
             var num_rects = 20;
             // track the pixel length of the level
@@ -52,7 +56,6 @@
             var debug_image;
             // special images
             var special_items = [];
-
 
             function Ball(img_src, x, y, r, vx, vy) {
                 this.img_src = img_src;
@@ -120,9 +123,17 @@
                 this.y = y;
             }
 
+            // reset the speed and position of a ball
+            function reset_ball(ball) {
+                ball.x = 20;
+                ball.y = 20;
+                ball.vx = ball_speed;
+                ball.vy = ball_speed;
+            }
+
             // initiate all balls
             function init_balls() {
-                balls.push(new Ball("", 20, 20, 10, 2, 2));
+                balls.push(new Ball("", 20, 20, ball_radious, ball_speed, ball_speed));
             }
 
             // draw all elements
@@ -184,7 +195,7 @@
                     for(var i=0; i< rects.length; i++){
                         var block = rects[i];
                         game_ctx.fillText(""+i, block.x, block.y-10);
-                        block.x = block.x + speed;
+                        block.x = block.x + rect_speed;
                         if(block.x > w + 100){
                             current_score += 1;
                             if(i == rects.length - 1){
@@ -219,22 +230,24 @@
                     for(var j = 0; j < balls.length; j++) {
                         var ball = balls[j];
                         if (ball.x - ball.r <= 0) {
-                            console.log("ball " + j + " hit left wall: reflect");
-                            reflect(ball, 1, 0);
+                            // console.log("ball " + j + " hit left wall: reflect");
+                            // reflect(ball, 1, 0);
+                            reset_ball(ball);
                         }
                         else if (ball.x + ball.r >= w) {
-                            console.log("ball " + j + " hit right wall: reflect");
-                            reflect(ball, -1, 0);
+                            // console.log("ball " + j + " hit right wall: reflect");
+                            // reflect(ball, -1, 0);
+                            reset_ball(ball);
                         }
                         else if (ball.y - ball.r <= 0) {
-                            console.log("ball " + j + " hit ceiling: reflect");
-                            reflect(ball, 0, 1);
+                            // console.log("ball " + j + " hit ceiling: reflect");
+                            // reflect(ball, 0, 1);
+                            reset_ball(ball);
                         }
                         else if (ball.y + ball.r >= h) {
                             // ball touched the ground and should vanish
-                            console.log("ball " + j + " hit ground: reset");
-                            ball.x = 20;
-                            ball.y = 20;
+                            // console.log("ball " + j + " hit ground: reset");
+                            reset_ball(ball);
                         }
                         else {
                             ball.x += ball.vx;
@@ -242,7 +255,7 @@
                             if(ball.img_src == "") {
                                 game_ctx.beginPath();
                                 game_ctx.arc(ball.x, ball.y, ball.r, 0, 2*Math.PI, false);
-                                game_ctx.fillStyle = "gray";
+                                game_ctx.fillStyle = "red";
                                 game_ctx.fill();
                                 game_ctx.lineWidth = 1;
                                 game_ctx.strokeStyle = "black";
@@ -264,7 +277,7 @@
 
             // detect the reflection of the bouncing ball by shadow
             function detect_reflection(ball){
-                for(degree = 0; degree < 360; degree+=60) {
+                for(degree = 0; degree < 360; degree+=10) {
                     rad = degree/180*Math.PI;
                     dx = ball.r * Math.sin(rad);
                     dy = ball.r * Math.cos(rad);
