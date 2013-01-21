@@ -1,10 +1,11 @@
 <!DOCTYPE HTML>
 <html>
     <head>
-        <script type='text/javascript' src='http://code.jquery.com/jquery-latest.min.js'></script>
+        <script type='text/javascript' src='js/jquery-latest.min.js'></script>
         <script type='text/javascript' src='js/stackblur.js'></script>   
 		<script type="text/javascript" src="js/kinect.js"></script>
         <script type="text/javascript" src="js/shadowboxing.js"></script>
+        <script type="text/javascript" src="js/sylvester.src.js"></script>
         <style type="text/css">
             #canvas{
             }
@@ -24,6 +25,8 @@
             var force_start = false;
             // array to store all rectangles
             var rects = [];
+            // array to store all balls
+            var balls = [];
             // canvas drawing context
             var game_ctx;
             // canvas size
@@ -50,6 +53,15 @@
             // special images
             var special_items = [];
 
+
+            function Ball(img_src, x, y, r, vx, vy) {
+                this.img_src = img_src;
+                this.x = x;
+                this.y = y;
+                this.r = r;
+                this.vx = vx;
+                this.vy = vy;
+            }
 
             // get random integer
             function get_rnd_pos(min, max,in_air){
@@ -89,9 +101,9 @@
                     if(i % 4 == 0){
                         var img = new Image;
                         img.src = "images/l"+((i/4)+1)+".png";
-                        rects.push(new rect(img,60,40,lm,h-40));
+                        rects.push(new Rect(img,60,40,lm,h-40));
                     }else{
-                        rects.push(new rect("",rect_width,rect_height,lm,get_rnd_pos(h-20,h-5,true)));
+                        rects.push(new Rect("",rect_width,rect_height,lm,get_rnd_pos(h-20,h-5,true)));
                     }
                     var gap = get_rnd_pos(400,600,false);
                     lm -= gap;
@@ -100,12 +112,17 @@
             }
 
             // rectangle object prototype
-            function rect(img_src, width, height,x,y){
+            function Rect(img_src, width, height,x,y){
                 this.img_src = img_src;
                 this.width = width;
                 this.height = height;
                 this.x = x;
                 this.y = y;
+            }
+
+            // initiate all balls
+            function init_balls() {
+                balls.push(new Ball("", 0, 0, 5, 1, 1));
             }
 
             // draw all elements
@@ -132,6 +149,8 @@
                         current_score = 0;
                         rects = [];
                         init_rect();
+                        balls = [];
+                        init_balls();
                     }
                 }else if(game_over){
                     if(!force_fail){
@@ -196,16 +215,76 @@
                             game_ctx.drawImage(block.img_src,block.x, block.y, block.width, block.height);
                         }
                     }
+
+                    for(var j = 0; j < balls.length; j++) {
+                        var ball = balls[j];
+                        if (ball.x - ball.r <= 0) {
+                            console.log("ball " + j + " hit left wall: reflect");
+                            reflect(ball, 1, 0);
+                        }
+                        else if (ball.x + ball.r >= w) {
+                            console.log("ball " + j + " hit right wall: reflect");
+                            reflect(ball, -1, 0);
+                        }
+                        else if (ball.y - ball.r <= 0) {
+                            console.log("ball " + j + " hit ceiling: reflect");
+                            reflect(ball, 0, 1);
+                        }
+                        else if (ball.y + ball.r >= h) {
+                            // ball touched the ground and should vanish
+                            console.log("ball " + j + " hit ground: remove");
+                            delete balls[j];
+                            j--;
+                        }
+                        else {
+                            ball.x += ball.vx;
+                            ball.y += ball.vy;
+                            if(ball.img_src == "") {
+                                game_ctx.beginPath();
+                                game_ctx.arc(ball.x, ball.y, ball.r, 0, 2*Math.PI, false);
+                                game_ctx.fillStyle = "gray";
+                                game_ctx.fill();
+                                game_ctx.lineWidth = 5;
+                                game_ctx.strokeStyle = "black";
+                                game_ctx.stroke();
+                            }
+                            else {
+                                game_ctx.drawImage(ball.img_src, ball.x, ball.y, ball.r * 2, ball.r * 2);
+                            }
+                            detect_reflection(ball);
+                        }
+                    }
                 }
             }
 
             // verify if a point is overlapped with shadow, use shadowContext
             function verify_collision(b_x,b_y){
-                if(shadowContext.getImageData(b_x,b_y,1,1).data[3] > 200){
-                    return true;
-                }else{
-                    return false;
+                return (shadowContext.getImageData(b_x,b_y,1,1).data[3] > 200);
+            }
+
+            // detect the reflection of the bouncing ball by shadow
+            function detect_reflection(ball){
+                for(degree = 0; degree < 360; degree++) {
+                    rad = degree/180*Math.PI;
+                    dx = ball.r * Math.sin(rad);
+                    dy = ball.r * Math.cos(rad);
+                    x = ball.x + dx;
+                    y = ball.y - dy;
+                    if (verify_collision(x, y)) {
+                        console.log("ball collision at (" + x + ", " + y + ")");
+                        reflect(ball, -dx, -dy);
+                        break;
+                    }
                 }
+            }
+
+            // reflect the ball velocity based on n(x,y)
+            function reflect(ball, nx, ny) {
+                var n = $V([nx, ny]).toUnitVector();
+                var v = $V([ball.vx, ball.vy]);
+                var u = n.multiply(v.dot(n)*(-2)).add(v);
+                ball.vx = u.e(1);
+                ball.vy = u.e(2);
             }
 
             // cookie setting and getting helpers
