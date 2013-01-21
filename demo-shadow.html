@@ -33,7 +33,7 @@
             var w = 640;
             var h = 480;
             // the spped of movements, higher = faster
-            var speed = 0;
+            var speed = 10;
             // the number of rectangles generated
             var num_rects = 20;
             // track the pixel length of the level
@@ -156,6 +156,14 @@
                     if(!force_fail){
                         game_ctx.putImageData(game_over_bg, 0, 0);
                     }
+
+                    game_ctx.font="20px sans-serif";
+                    game_ctx.fillText("Level "+current_level, 10, 30);
+                    game_ctx.fillText("Score "+current_score, 90, 30);
+
+                    var top_score = getCookie("evader_top_score");
+                    game_ctx.fillText("Top score "+top_score, 180, 30);
+
                     game_ctx.fillStyle = "rgb(255,255,255)";
                     game_ctx.fillRect(0, h/2-18, w, 20);
                     game_ctx.fillStyle = "rgb(0,0,0)";
