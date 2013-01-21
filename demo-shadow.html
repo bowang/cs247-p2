@@ -33,7 +33,7 @@
             var w = 640;
             var h = 480;
             // the spped of movements, higher = faster
-            var speed = 9;
+            var speed = 0;
             // the number of rectangles generated
             var num_rects = 20;
             // track the pixel length of the level
@@ -122,7 +122,7 @@
 
             // initiate all balls
             function init_balls() {
-                balls.push(new Ball("", 0, 0, 5, 1, 1));
+                balls.push(new Ball("", 20, 20, 10, 2, 2));
             }
 
             // draw all elements
@@ -196,7 +196,7 @@
                                 block.y = get_rnd_pos(h-20,h-5,true);
                             }
                         }
-                        if(verify_collision(block.x,block.y) || verify_collision(block.x+block.width,block.y) || force_fail){
+                        if(verify_collision(block.x+block.width/2,block.y + block.height/2) || force_fail){
                             console.log("collision happened on box " + i);
                             var top_score = getCookie("evader_top_score");
                             console.log("Previous top score "+top_score);
@@ -232,9 +232,9 @@
                         }
                         else if (ball.y + ball.r >= h) {
                             // ball touched the ground and should vanish
-                            console.log("ball " + j + " hit ground: remove");
-                            delete balls[j];
-                            j--;
+                            console.log("ball " + j + " hit ground: reset");
+                            ball.x = 20;
+                            ball.y = 20;
                         }
                         else {
                             ball.x += ball.vx;
@@ -244,7 +244,7 @@
                                 game_ctx.arc(ball.x, ball.y, ball.r, 0, 2*Math.PI, false);
                                 game_ctx.fillStyle = "gray";
                                 game_ctx.fill();
-                                game_ctx.lineWidth = 5;
+                                game_ctx.lineWidth = 1;
                                 game_ctx.strokeStyle = "black";
                                 game_ctx.stroke();
                             }
@@ -264,7 +264,7 @@
 
             // detect the reflection of the bouncing ball by shadow
             function detect_reflection(ball){
-                for(degree = 0; degree < 360; degree++) {
+                for(degree = 0; degree < 360; degree+=60) {
                     rad = degree/180*Math.PI;
                     dx = ball.r * Math.sin(rad);
                     dy = ball.r * Math.cos(rad);
@@ -272,6 +272,7 @@
                     y = ball.y - dy;
                     if (verify_collision(x, y)) {
                         console.log("ball collision at (" + x + ", " + y + ")");
+                        current_score += 10;
                         reflect(ball, -dx, -dy);
                         break;
                     }
@@ -285,6 +286,7 @@
                 var u = n.multiply(v.dot(n)*(-2)).add(v);
                 ball.vx = u.e(1);
                 ball.vy = u.e(2);
+                console.log("reflect: (" + v.e(1) + ", " + v.e(2) + ") --> (" + u.e(1) + ", " + u.e(2) + ")");
             }
 
             // cookie setting and getting helpers

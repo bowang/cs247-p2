@@ -83,6 +83,7 @@ function initializeDOMElements() {
     rawCanvas.setAttribute('width', 640);
     rawCanvas.setAttribute('height', 480);
     rawCanvas.style.display = SHOW_RAW ? 'block' : 'none';
+    rawCanvas.style.border = "2px solid #000";
     document.getElementById('capture').appendChild(rawCanvas);
     rawContext = rawCanvas.getContext('2d');
 
@@ -102,6 +103,7 @@ function initializeDOMElements() {
     shadowCanvas.setAttribute('width', 640);
     shadowCanvas.setAttribute('height', 480);
     shadowCanvas.style.display = SHOW_SHADOW ? 'block' : 'none';
+    shadowCanvas.style.border = "2px solid #000";
     document.getElementById('capture').appendChild(shadowCanvas);
     shadowContext = shadowCanvas.getContext('2d');    
 }
