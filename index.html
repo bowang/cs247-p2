@@ -1,0 +1,347 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <script type='text/javascript' src='js/jquery-latest.min.js'></script>
+        <script type='text/javascript' src='js/stackblur.js'></script>   
+		<script type="text/javascript" src="js/kinect.js"></script>
+        <script type="text/javascript" src="js/shadowboxing.js"></script>
+        <script type="text/javascript" src="js/sylvester.src.js"></script>
+        <style type="text/css">
+            #canvas{
+            }
+            #frame{
+                width: 700px;
+                margin: 0 auto;
+            }
+            #capture{
+                width: 700px;
+                margin: 0 auto;
+            }
+        </style>
+        <script type="text/javascript">
+            // for console debugging purpose
+            var force_fail = false;
+            // for console debugging purpose
+            var force_start = false;
+            // array to store all rectangles
+            var rects = [];
+            // array to store all balls
+            var balls = [];
+            // canvas drawing context
+            var game_ctx;
+            // canvas size
+            var w = 640;
+            var h = 480;
+            // the speed of movements, higher = faster
+            var rect_speed = 15;
+            // the speed of the ball
+            var ball_speed = 5;
+            // the radious of the ball
+            var ball_radious = 20;
+            // the number of rectangles generated
+            var num_rects = 20;
+            // track the pixel length of the level
+            var total_block_length = 0;
+            // current level
+            var current_level = 1;
+            // current score
+            var current_score = 0;
+            //  a boolen function changing every once a while
+            var tick = false;
+            var game_over = false;
+            var game_welcome = true;
+            //the background of the user when game is over
+            var game_over_bg;
+            // image for live debugging
+            var debug_image;
+            // special images
+            var special_items = [];
+
+            function Ball(img_src, x, y, r, vx, vy) {
+                this.img_src = img_src;
+                this.x = x;
+                this.y = y;
+                this.r = r;
+                this.vx = vx;
+                this.vy = vy;
+            }
+
+            // get random integer
+            function get_rnd_pos(min, max,in_air){
+                var dice = Math.random();
+                if(dice>0.7 && in_air){
+                     // in middle air
+                    return Math.floor(Math.random() * (max - min + 1)) + min - 300;
+                    
+                }else{
+                   // on the ground
+                    return Math.floor(Math.random() * (max - min + 1)) + min;
+                }
+                
+            }
+
+            // main function, not called , see shadowbox.js for direct injection
+            function animate(){
+                var canvas = document.getElementById('canvas');
+                if (canvas.getContext) {
+                    game_ctx = canvas.getContext("2d");
+                    setInterval(draw,20);
+                    setInterval(boolean_tick,300);
+                }
+            }
+
+            // provide a boolean switch of fixed time interval
+            function boolean_tick(){
+                tick = !tick;
+            }
+
+            // initiate all rectangles
+            function init_rect(){
+                var lm = 0;
+                for(var i=0;i<num_rects;i++){
+                    var rect_width = get_rnd_pos(30,50,false);
+                    var rect_height = get_rnd_pos(20,40,false);
+                    if(i % 4 == 0){
+                        var img = new Image;
+                        img.src = "images/l"+((i/4)+1)+".png";
+                        rects.push(new Rect(img,60,40,lm,h-40));
+                    }else{
+                        rects.push(new Rect("",rect_width,rect_height,lm,get_rnd_pos(h-20,h-5,true)));
+                    }
+                    var gap = get_rnd_pos(400,600,false);
+                    lm -= gap;
+                    total_block_length += (rect_width+gap);
+                }
+            }
+
+            // rectangle object prototype
+            function Rect(img_src, width, height,x,y){
+                this.img_src = img_src;
+                this.width = width;
+                this.height = height;
+                this.x = x;
+                this.y = y;
+            }
+
+            // reset the speed and position of a ball
+            function reset_ball(ball) {
+                ball.x = 30;
+                ball.y = 30;
+                ball.vx = ball_speed;
+                ball.vy = ball_speed;
+            }
+
+            // initiate all balls
+            function init_balls() {
+                balls.push(new Ball("", 30, 30, ball_radious, ball_speed, ball_speed));
+            }
+
+            // draw all elements
+            function draw() {
+                game_ctx.clearRect(0,0,w,h);  
+                game_ctx.lineWidth=1;
+                game_ctx.lineStyle="#ffff00";
+                game_ctx.fillStyle = "rgb(0,0,0)";
+                game_ctx.font="20px sans-serif";
+                game_ctx.fillText("Level "+current_level, 10, 30);
+                game_ctx.fillText("Score "+current_score, 90, 30);
+
+                var top_score = getCookie("evader_top_score");
+                game_ctx.fillText("Top score "+top_score, 180, 30);
+                            
+                if(game_welcome){
+                    game_ctx.fillText("Stand in the blue area to start the game.", 10, h/2);
+                    game_ctx.fillStyle = "rgb(0,0,255)";
+                    game_ctx.fillRect(w-100, h-10, 100, 15);
+                    if(verify_collision(w-100,h-10) || verify_collision(w,h-10) || force_start){
+                        game_welcome = false;
+                        game_over = false;
+                        current_level = 1;
+                        current_score = 0;
+                        rects = [];
+                        init_rect();
+                        balls = [];
+                        init_balls();
+                    }
+                }else if(game_over){
+                    if(!force_fail){
+                        game_ctx.putImageData(game_over_bg, 0, 0);
+                    }
+
+                    game_ctx.font="20px sans-serif";
+                    game_ctx.fillText("Level "+current_level, 10, 30);
+                    game_ctx.fillText("Score "+current_score, 90, 30);
+
+                    var top_score = getCookie("evader_top_score");
+                    game_ctx.fillText("Top score "+top_score, 180, 30);
+
+                    game_ctx.fillStyle = "rgb(255,255,255)";
+                    game_ctx.fillRect(0, h/2-18, w, 20);
+                    game_ctx.fillStyle = "rgb(0,0,0)";
+                    game_ctx.fillText("Game over : ( Touch the upper right block to restart.", 10, h/2);
+                    game_ctx.font="16px sans-serif";
+                    if(tick){
+                        game_ctx.fillText("Touch me to restart", w-150, 30);
+                    }
+                    game_ctx.fillRect(w-100, 40, 60, 15);
+                    if(verify_collision(w-100,55) || verify_collision(w-40,55)){
+                        game_over = false;
+                        current_level = 1;
+                        current_score = 0;
+                        rects = [];
+                        init_rect();
+                    }
+                }else{
+                    if(rects[0].x > -20 && rects[0].x < w/2 && tick){
+                        game_ctx.font="22px sans-serif";
+                        game_ctx.fillText("Objects coming! Avoid them!", 10, h/2);
+                    }
+                    //debug_image = getShadowData();
+                    //game_ctx.putImageData(debug_image, 0, 0);
+
+                    game_ctx.font="13px sans-serif";
+                    for(var i=0; i< rects.length; i++){
+                        var block = rects[i];
+                        // game_ctx.fillText(""+i, block.x, block.y-10);
+                        block.x = block.x + rect_speed;
+                        if(block.x > w + 100){
+                            current_score += 1;
+                            if(i == rects.length - 1){
+                                // next level
+                                current_level += 1;
+                            }
+                            block.x = block.x - total_block_length;
+                            if(block.img_src == ""){
+                                block.y = get_rnd_pos(h-20,h-5,true);
+                            }
+                        }
+                        if(verify_collision(block.x+block.width/2,block.y + block.height/2) || force_fail){
+                            console.log("collision happened on box " + i);
+                            var top_score = getCookie("evader_top_score");
+                            console.log("Previous top score "+top_score);
+                            if(current_score > top_score){
+                                setCookie("evader_top_score",current_score,5);
+                                console.log("New top score "+current_score);
+                            }
+                            if(!force_fail){
+                                game_over_bg = getShadowData();
+                            }
+                            game_over = true;
+                        }
+                        if(block.img_src == ""){
+                            game_ctx.fillRect(block.x, block.y, block.width, block.height);
+                        }else{
+                            game_ctx.drawImage(block.img_src,block.x, block.y, block.width, block.height);
+                        }
+                    }
+
+                    for(var j = 0; j < balls.length; j++) {
+                        var ball = balls[j];
+                        if (ball.x - ball.r <= 0) {
+                            // console.log("ball " + j + " hit left wall: reflect");
+                            // reflect(ball, 1, 0);
+                            reset_ball(ball);
+                        }
+                        else if (ball.x + ball.r >= w) {
+                            // console.log("ball " + j + " hit right wall: reflect");
+                            // reflect(ball, -1, 0);
+                            reset_ball(ball);
+                        }
+                        else if (ball.y - ball.r <= 0) {
+                            // console.log("ball " + j + " hit ceiling: reflect");
+                            // reflect(ball, 0, 1);
+                            reset_ball(ball);
+                        }
+                        else if (ball.y + ball.r >= h) {
+                            // ball touched the ground and should vanish
+                            // console.log("ball " + j + " hit ground: reset");
+                            reset_ball(ball);
+                        }
+                        else {
+                            ball.x += ball.vx;
+                            ball.y += ball.vy;
+                            if(ball.img_src == "") {
+                                game_ctx.beginPath();
+                                game_ctx.arc(ball.x, ball.y, ball.r, 0, 2*Math.PI, false);
+                                game_ctx.fillStyle = "red";
+                                game_ctx.fill();
+                                game_ctx.lineWidth = 1;
+                                game_ctx.strokeStyle = "black";
+                                game_ctx.stroke();
+                            }
+                            else {
+                                game_ctx.drawImage(ball.img_src, ball.x, ball.y, ball.r * 2, ball.r * 2);
+                            }
+                            detect_reflection(ball);
+                        }
+                    }
+                }
+            }
+
+            // verify if a point is overlapped with shadow, use shadowContext
+            function verify_collision(b_x,b_y){
+                return (shadowContext.getImageData(b_x,b_y,1,1).data[3] > 200);
+            }
+
+            // detect the reflection of the bouncing ball by shadow
+            function detect_reflection(ball){
+                for(degree = 0; degree < 360; degree+=10) {
+                    rad = degree/180*Math.PI;
+                    dx = ball.r * Math.sin(rad);
+                    dy = ball.r * Math.cos(rad);
+                    x = ball.x + dx;
+                    y = ball.y - dy;
+                    if (verify_collision(x, y)) {
+                        console.log("ball collision at (" + x + ", " + y + ")");
+                        current_score += 10;
+                        reflect(ball, -dx, -dy);
+                        break;
+                    }
+                }
+            }
+
+            // reflect the ball velocity based on n(x,y)
+            function reflect(ball, nx, ny) {
+                var n = $V([nx, ny]).toUnitVector();
+                var v = $V([ball.vx, ball.vy]);
+                var u = n.multiply(v.dot(n)*(-2)).add(v);
+                ball.vx = u.e(1);
+                ball.vy = u.e(2);
+                console.log("reflect: (" + v.e(1) + ", " + v.e(2) + ") --> (" + u.e(1) + ", " + u.e(2) + ")");
+            }
+
+            // cookie setting and getting helpers
+            function getCookie(c_name){
+                var i,x,y,ARRcookies=document.cookie.split(";");
+                for (i=0;i<ARRcookies.length;i++){
+                    x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
+                    y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
+                    x=x.replace(/^\s+|\s+$/g,"");
+                    if (x==c_name){
+                        return unescape(y);
+                    }
+                }
+                return 0;
+            }
+            function setCookie(c_name,value,exdays){
+                var exdate=new Date();
+                exdate.setDate(exdate.getDate() + exdays);
+                var c_value=escape(value) + ((exdays==null) ? "" : "; expires="+exdate.toUTCString());
+                document.cookie=c_name + "=" + c_value;
+            }
+            
+        </script>
+    </head>
+
+    <body onload="animate()">
+        <br/>
+        <div id="capture">
+            <button id="background">Capture Background</button>        
+        </div>    
+
+        <div id="frame">
+            <canvas id="canvas" width="640px" height="480px">
+            </canvas>
+        </div>
+    </body>
+</html>
