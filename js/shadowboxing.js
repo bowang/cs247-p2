@@ -27,9 +27,9 @@ var SHADOW_THRESHOLD = 125;
 var BACKGROUND_ALPHA = 0.0;
 // We run a gaussian blur over the input image to reduce random noise 
 // in the background subtraction. Change this radius to trade off noise for precision 
-var STACK_BLUR_RADIUS = 4; //
+var STACK_BLUR_RADIUS = 7; //
 // Zooming the canvas to focus on further projected screen
-var EVADER_ZOOM_LEVEL = 2;
+var EVADER_ZOOM_LEVEL = 1.8;
 // debug mode for evader
 var EVADER_DEBUG = false;
 
