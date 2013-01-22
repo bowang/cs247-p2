@@ -212,7 +212,7 @@
                             if(i == rects.length - 1){
                                 // next level
                                 current_level += 1;
-                                rect_speed += 1;
+                                rect_speed = Math.round(rect_speed * 1.2);
                             }
                             block.x = block.x - total_block_length;
                             if(block.img_src == ""){
