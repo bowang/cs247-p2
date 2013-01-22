@@ -12,7 +12,7 @@
 // Student-configurable options below...
 
 // show the after-gaussian blur camera input
-SHOW_RAW = false;
+SHOW_RAW = true;
 // show the final shadow
 SHOW_SHADOW = false;
 // input option: kinectdepth (kinect depth sensor), kinectrgb (kinect camera), 
