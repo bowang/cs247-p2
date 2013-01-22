@@ -194,7 +194,7 @@
                 }else{
                     if(rects[0].x > -20 && rects[0].x < w/2 && tick){
                         game_ctx.font="22px sans-serif";
-                        game_ctx.fillText("Incoming blocks! Avoid them!", 10, h/2);
+                        game_ctx.fillText("Objects coming! Avoid them!", 10, h/2);
                     }
                     //debug_image = getShadowData();
                     //game_ctx.putImageData(debug_image, 0, 0);
@@ -202,7 +202,7 @@
                     game_ctx.font="13px sans-serif";
                     for(var i=0; i< rects.length; i++){
                         var block = rects[i];
-                        game_ctx.fillText(""+i, block.x, block.y-10);
+                        // game_ctx.fillText(""+i, block.x, block.y-10);
                         block.x = block.x + rect_speed;
                         if(block.x > w + 100){
                             current_score += 1;
